@@ -1,0 +1,634 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>L-Trim Miter Calculator</title>
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#c8922a">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="L-Trim Calc">
+<link rel="apple-touch-icon" href="icon-192.png">
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #1a1510;
+    --surface: #231e18;
+    --surface2: #2e2720;
+    --border: #4a3e2e;
+    --gold: #c8922a;
+    --gold-light: #e8b84b;
+    --gold-dim: #7a5a1a;
+    --text: #f0e6d0;
+    --text-dim: #9a8870;
+    --accent: #8bc4a8;
+    --red: #c84a3a;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'IBM Plex Mono', monospace;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 40px 20px;
+    background-image:
+      repeating-linear-gradient(0deg, transparent, transparent 39px, rgba(74,62,46,0.15) 39px, rgba(74,62,46,0.15) 40px),
+      repeating-linear-gradient(90deg, transparent, transparent 39px, rgba(74,62,46,0.08) 39px, rgba(74,62,46,0.08) 40px);
+  }
+
+  header {
+    text-align: center;
+    margin-bottom: 40px;
+    animation: fadeDown 0.6s ease both;
+  }
+
+  @keyframes fadeDown {
+    from { opacity: 0; transform: translateY(-16px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+
+  .eyebrow {
+    font-size: 11px;
+    letter-spacing: 4px;
+    color: var(--gold);
+    text-transform: uppercase;
+    margin-bottom: 10px;
+  }
+
+  h1 {
+    font-family: 'Playfair Display', serif;
+    font-size: clamp(28px, 5vw, 48px);
+    color: var(--text);
+    line-height: 1.1;
+  }
+
+  h1 span { color: var(--gold-light); }
+
+  .subtitle {
+    margin-top: 10px;
+    color: var(--text-dim);
+    font-size: 12px;
+    letter-spacing: 1px;
+  }
+
+  .divider {
+    width: 120px;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, var(--gold), transparent);
+    margin: 20px auto;
+  }
+
+  .layout {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 24px;
+    width: 100%;
+    max-width: 880px;
+    animation: fadeUp 0.7s 0.1s ease both;
+  }
+
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(20px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    padding: 28px;
+    position: relative;
+  }
+
+  .card::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 2px;
+    background: linear-gradient(90deg, var(--gold-dim), var(--gold), var(--gold-dim));
+    border-radius: 4px 4px 0 0;
+  }
+
+  .card-title {
+    font-size: 10px;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    color: var(--gold);
+    margin-bottom: 24px;
+  }
+
+  .field {
+    margin-bottom: 18px;
+  }
+
+  label {
+    display: block;
+    font-size: 11px;
+    letter-spacing: 1.5px;
+    color: var(--text-dim);
+    text-transform: uppercase;
+    margin-bottom: 6px;
+  }
+
+  .input-wrap {
+    display: flex;
+    align-items: center;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 3px;
+    overflow: hidden;
+    transition: border-color 0.2s;
+  }
+
+  .input-wrap:focus-within {
+    border-color: var(--gold);
+  }
+
+  input[type="number"] {
+    background: transparent;
+    border: none;
+    outline: none;
+    color: var(--text);
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 15px;
+    padding: 10px 14px;
+    width: 100%;
+    -moz-appearance: textfield;
+  }
+
+  input[type="number"]::-webkit-outer-spin-button,
+  input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; }
+
+  .unit {
+    padding: 10px 14px 10px 0;
+    font-size: 11px;
+    color: var(--gold-dim);
+    letter-spacing: 1px;
+    white-space: nowrap;
+  }
+
+  /* Diagram */
+  .diagram-wrap {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 16px 0;
+    min-height: 160px;
+  }
+
+  svg text { font-family: 'IBM Plex Mono', monospace; }
+
+  /* Unit toggle */
+  .toggle-row {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 20px;
+  }
+
+  .toggle-btn {
+    flex: 1;
+    padding: 8px;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 3px;
+    color: var(--text-dim);
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 12px;
+    letter-spacing: 2px;
+    cursor: pointer;
+    text-transform: uppercase;
+    transition: all 0.2s;
+  }
+
+  .toggle-btn.active {
+    background: var(--gold);
+    border-color: var(--gold);
+    color: var(--bg);
+    font-weight: 600;
+  }
+
+  /* Results */
+  .results-card {
+    grid-column: 1 / -1;
+  }
+
+  .results-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 16px;
+  }
+
+  .result-item {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 3px;
+    padding: 16px 18px;
+    position: relative;
+    overflow: hidden;
+    transition: border-color 0.2s;
+  }
+
+  .result-item:hover { border-color: var(--gold-dim); }
+
+  .result-label {
+    font-size: 10px;
+    letter-spacing: 2px;
+    color: var(--text-dim);
+    text-transform: uppercase;
+    margin-bottom: 6px;
+  }
+
+  .result-piece {
+    font-size: 11px;
+    color: var(--gold-dim);
+    margin-bottom: 2px;
+    letter-spacing: 1px;
+  }
+
+  .result-value {
+    font-family: 'Playfair Display', serif;
+    font-size: 22px;
+    color: var(--gold-light);
+  }
+
+  .result-value.secondary {
+    font-size: 14px;
+    color: var(--accent);
+    font-family: 'IBM Plex Mono', monospace;
+  }
+
+  .result-note {
+    font-size: 10px;
+    color: var(--text-dim);
+    margin-top: 4px;
+    letter-spacing: 0.5px;
+  }
+
+  .cut-badge {
+    position: absolute;
+    top: 12px; right: 12px;
+    background: var(--gold-dim);
+    color: var(--bg);
+    font-size: 9px;
+    letter-spacing: 1px;
+    padding: 3px 7px;
+    border-radius: 2px;
+    text-transform: uppercase;
+    font-weight: 600;
+  }
+
+  .cut-badge.qty2 { background: var(--gold-dim); }
+  .cut-badge.qty1 { background: #5a6e4a; }
+
+  .info-box {
+    background: rgba(139,196,168,0.07);
+    border: 1px solid rgba(139,196,168,0.2);
+    border-radius: 3px;
+    padding: 14px 16px;
+    margin-top: 16px;
+    font-size: 11px;
+    color: var(--accent);
+    line-height: 1.7;
+    letter-spacing: 0.3px;
+  }
+
+  .info-box strong { color: var(--accent); }
+
+  .no-data {
+    color: var(--text-dim);
+    font-size: 13px;
+    text-align: center;
+    padding: 30px;
+    letter-spacing: 1px;
+  }
+
+  .section-sep {
+    grid-column: 1 / -1;
+    height: 1px;
+    background: var(--border);
+    margin: 4px 0 8px;
+  }
+
+  .calc-toggle {
+    display: block;
+    width: 100%;
+    margin-top: 12px;
+    padding: 9px 14px;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 3px 3px 0 0;
+    color: var(--gold-dim);
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    cursor: pointer;
+    text-align: left;
+    transition: color 0.2s, border-color 0.2s;
+  }
+  .calc-toggle:hover { color: var(--gold); border-color: var(--gold-dim); }
+
+  @media (max-width: 600px) {
+    .layout { grid-template-columns: 1fr; }
+    .results-grid { grid-template-columns: 1fr; }
+    .results-card { grid-column: 1; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <p class="eyebrow">Woodworking Tool</p>
+  <h1>L-Trim <span>Miter</span> Calculator</h1>
+  <p class="subtitle">45° corner miters · 4-sided panel wrap</p>
+  <div class="divider"></div>
+</header>
+
+<div class="layout">
+
+  <!-- Inputs: Panel -->
+  <div class="card">
+    <p class="card-title">▪ Panel Dimensions</p>
+
+    <div class="toggle-row">
+      <button class="toggle-btn active" onclick="setUnit('in')">Inches</button>
+      <button class="toggle-btn" onclick="setUnit('mm')">MM</button>
+    </div>
+
+    <div class="field">
+      <label>Panel Length (long side)</label>
+      <div class="input-wrap">
+        <input type="number" id="panelLength" min="0" step="0.0625" placeholder="e.g. 24" oninput="calc()">
+        <span class="unit" id="u1">in</span>
+      </div>
+    </div>
+    <div class="field">
+      <label>Panel Width (short side)</label>
+      <div class="input-wrap">
+        <input type="number" id="panelWidth" min="0" step="0.0625" placeholder="e.g. 18" oninput="calc()">
+        <span class="unit" id="u2">in</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Inputs: Trim -->
+  <div class="card">
+    <p class="card-title">▪ L-Trim Profile</p>
+
+    <div class="diagram-wrap">
+      <svg id="trimDiagram" width="200" height="150" viewBox="0 0 200 150"></svg>
+    </div>
+
+    <div class="field">
+      <label>Trim Leg A — covers panel face</label>
+      <div class="input-wrap">
+        <input type="number" id="legA" min="0" step="0.0625" placeholder="e.g. 1.5" oninput="calc()">
+        <span class="unit" id="u4">in</span>
+      </div>
+    </div>
+    <div class="field">
+      <label>Trim Leg B — wraps panel edge</label>
+      <div class="input-wrap">
+        <input type="number" id="legB" min="0" step="0.0625" placeholder="e.g. 1.0" oninput="calc()">
+        <span class="unit" id="u5">in</span>
+      </div>
+    </div>
+    <div class="field">
+      <label>Trim Thickness (material thickness)</label>
+      <div class="input-wrap">
+        <input type="number" id="trimThick" min="0" step="0.0625" placeholder="e.g. 0.25" oninput="calc()">
+        <span class="unit" id="u6">in</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Results -->
+  <div class="card results-card">
+    <p class="card-title">▪ Cut List — all pieces at 45° miter both ends</p>
+    <div id="results"><p class="no-data">Enter dimensions above to calculate cut lengths</p></div>
+  </div>
+
+</div>
+
+<script>
+let unit = 'in';
+
+function setUnit(u) {
+  unit = u;
+  document.querySelectorAll('.toggle-btn').forEach(b => b.classList.remove('active'));
+  event.target.classList.add('active');
+  ['u1','u2','u4','u5','u6'].forEach(id => document.getElementById(id).textContent = u);
+  drawDiagram();
+  calc();
+}
+
+function fmt(v) {
+  if (unit === 'mm') return v.toFixed(1) + ' mm';
+  // convert to fractional inches display
+  return toFraction(v) + '"';
+}
+
+function toFraction(dec) {
+  const whole = Math.floor(dec);
+  const frac = dec - whole;
+  const denoms = [2,4,8,16,32];
+  let best = '', bestErr = 1;
+  for (let d of denoms) {
+    const n = Math.round(frac * d);
+    const err = Math.abs(frac - n/d);
+    if (err < bestErr) { bestErr = err; best = { n, d }; }
+  }
+  if (bestErr < 0.001) {
+    // simplify
+    const g = gcd(best.n, best.d);
+    const n = best.n / g, d = best.d / g;
+    if (n === 0) return whole === 0 ? '0' : String(whole);
+    if (d === 1) return String(whole + n);
+    return (whole > 0 ? whole + ' ' : '') + n + '⁄' + d;
+  }
+  return dec.toFixed(3);
+}
+
+function gcd(a, b) { return b ? gcd(b, a % b) : a; }
+
+function drawDiagram() {
+  const svg = document.getElementById('trimDiagram');
+  const lA = parseFloat(document.getElementById('legA').value) || 1.5;
+  const lB = parseFloat(document.getElementById('legB').value) || 1.0;
+  const t  = parseFloat(document.getElementById('trimThick').value) || 0.25;
+  const scale = 50;
+  const ox = 30, oy = 20;
+
+  // Draw L cross-section
+  const aH = Math.min(lA * scale, 100);
+  const bW = Math.min(lB * scale, 80);
+  const tS = Math.min(t  * scale, 20);
+
+  const path = `
+    M ${ox} ${oy}
+    L ${ox + bW} ${oy}
+    L ${ox + bW} ${oy + tS}
+    L ${ox + tS} ${oy + tS}
+    L ${ox + tS} ${oy + aH}
+    L ${ox}      ${oy + aH}
+    Z
+  `;
+
+  svg.innerHTML = `
+    <defs>
+      <pattern id="wood" patternUnits="userSpaceOnUse" width="6" height="6" patternTransform="rotate(15)">
+        <line x1="0" y1="0" x2="0" y2="6" stroke="#5a4530" stroke-width="1.5" opacity="0.4"/>
+      </pattern>
+    </defs>
+    <path d="${path}" fill="url(#wood)" stroke="#c8922a" stroke-width="1.5"/>
+
+    <!-- Leg B label -->
+    <line x1="${ox}" y1="${oy - 8}" x2="${ox + bW}" y2="${oy - 8}" stroke="#9a8870" stroke-width="0.8"/>
+    <line x1="${ox}" y1="${oy - 12}" x2="${ox}" y2="${oy - 4}" stroke="#9a8870" stroke-width="0.8"/>
+    <line x1="${ox + bW}" y1="${oy - 12}" x2="${ox + bW}" y2="${oy - 4}" stroke="#9a8870" stroke-width="0.8"/>
+    <text x="${ox + bW/2}" y="${oy - 12}" text-anchor="middle" font-size="9" fill="#c8922a">Leg B</text>
+
+    <!-- Leg A label -->
+    <line x1="${ox + bW + 8}" y1="${oy}" x2="${ox + bW + 8}" y2="${oy + aH}" stroke="#9a8870" stroke-width="0.8"/>
+    <line x1="${ox + bW + 4}" y1="${oy}" x2="${ox + bW + 12}" y2="${oy}" stroke="#9a8870" stroke-width="0.8"/>
+    <line x1="${ox + bW + 4}" y1="${oy + aH}" x2="${ox + bW + 12}" y2="${oy + aH}" stroke="#9a8870" stroke-width="0.8"/>
+    <text x="${ox + bW + 20}" y="${oy + aH/2 + 4}" font-size="9" fill="#c8922a">Leg A</text>
+
+    <!-- thickness label -->
+    <text x="${ox + bW/2 - 10}" y="${oy + tS/2 + 4}" font-size="8" fill="#9a8870">t</text>
+  `;
+}
+
+function calc() {
+  drawDiagram();
+
+  const L  = parseFloat(document.getElementById('panelLength').value);
+  const W  = parseFloat(document.getElementById('panelWidth').value);
+  const lA = parseFloat(document.getElementById('legA').value);
+  const lB = parseFloat(document.getElementById('legB').value);
+  const tT = parseFloat(document.getElementById('trimThick').value);
+
+  const div = document.getElementById('results');
+
+  if ([L, W, lA, lB, tT].some(isNaN) || [L, W, lA, lB, tT].some(v => v <= 0)) {
+    div.innerHTML = '<p class="no-data">Enter all dimensions above to calculate cut lengths</p>';
+    return;
+  }
+
+  /*
+    CORRECTED GEOMETRY: L-trim, 45° miters, 4-sided panel wrap.
+
+    Leg A = the face leg (lies flat on the panel face)
+    Leg B = the edge leg (wraps around the panel edge/side)
+    tT    = material thickness of the trim stock
+
+    At a 45° miter cut through material of thickness tT:
+      long point − short point (per end) = tT
+      (because tan(45°) = 1, so the offset = tT × 1 = tT)
+
+    The SHORT POINT is the inside measurement — it equals the panel dimension exactly,
+    because the inside face of the trim sits flush against the panel edge.
+
+    The LONG POINT = short point + 2 × tT
+      (tT added at each end for the two miter tips)
+
+    Leg A and Leg B dimensions affect the reveal and fit, but do NOT change
+    the long-point or short-point cut lengths — those are driven entirely by
+    the panel dimension and trim thickness.
+
+    Miter offset per end = tT = e.g. 1/4" → long point overhangs short point by 1/4" per end.
+  */
+
+  // Short point = panel dimension (inside face of trim flush to panel edge)
+  const spLen = L;
+  const spWid = W;
+
+  // Long point = panel dimension + 2 × trim thickness (one tT per mitered end)
+  const lpLen = L + 2 * tT;
+  const lpWid = W + 2 * tT;
+
+  const miterOffset = tT; // per end
+
+  // Total linear footage
+  const totalLinear = 2 * lpLen + 2 * lpWid;
+
+  div.innerHTML = `
+    <div class="results-grid">
+      <div class="result-item">
+        <span class="cut-badge qty2">Qty: 2</span>
+        <p class="result-label">Long Pieces (along panel length)</p>
+        <p class="result-piece">Long point →</p>
+        <p class="result-value">${fmt(lpLen)}</p>
+        <p class="result-note">45° miter both ends · cut 2 pieces</p>
+      </div>
+      <div class="result-item">
+        <span class="cut-badge qty2">Qty: 2</span>
+        <p class="result-label">Short Pieces (along panel width)</p>
+        <p class="result-piece">Long point →</p>
+        <p class="result-value">${fmt(lpWid)}</p>
+        <p class="result-note">45° miter both ends · cut 2 pieces</p>
+      </div>
+      <div class="result-item" style="grid-column:1/-1; background:rgba(200,146,42,0.05); border-color:var(--gold-dim)">
+        <p class="result-label">Total Linear Material Needed</p>
+        <p class="result-value">${fmt(totalLinear)}</p>
+        <p class="result-note">Recommend adding 10–15% overage for waste when purchasing stock</p>
+      </div>
+    </div>
+
+    <button class="calc-toggle" onclick="toggleCalc()" id="calcToggleBtn">▶ Show Calculation</button>
+    <div id="calcBreakdown" style="display:none">
+      <div class="info-box" style="margin-top:0; border-top:none; border-radius:0 0 3px 3px; color:var(--text-dim); line-height:2">
+        <strong style="color:var(--gold); letter-spacing:1px; font-size:11px">LONG PIECES (× 2)</strong><br>
+        Panel length &nbsp;<span style="color:var(--text)">${fmt(L)}</span><br>
+        + 2 × trim thickness &nbsp;<span style="color:var(--text)">2 × ${fmt(tT)} = ${fmt(2*tT)}</span><br>
+        <span style="border-top:1px solid var(--border); display:block; padding-top:6px; margin-top:2px">
+          Long point = <strong style="color:var(--gold-light)">${fmt(lpLen)}</strong>
+        </span>
+        <br>
+        <strong style="color:var(--gold); letter-spacing:1px; font-size:11px">SHORT PIECES (× 2)</strong><br>
+        Panel width &nbsp;<span style="color:var(--text)">${fmt(W)}</span><br>
+        + 2 × trim thickness &nbsp;<span style="color:var(--text)">2 × ${fmt(tT)} = ${fmt(2*tT)}</span><br>
+        <span style="border-top:1px solid var(--border); display:block; padding-top:6px; margin-top:2px">
+          Long point = <strong style="color:var(--gold-light)">${fmt(lpWid)}</strong>
+        </span>
+      </div>
+    </div>
+
+    <div class="info-box" style="margin-top:12px">
+      <strong>How to use these numbers:</strong><br>
+      Set your miter saw to <strong>45°</strong>. Make the first angled cut at one end of your stock,
+      then measure from the <strong>long point</strong> (the outermost tip of the miter) and cut the opposite end.
+      The short point takes care of itself.
+    </div>
+  `;
+}
+
+function toggleCalc() {
+  const panel = document.getElementById('calcBreakdown');
+  const btn   = document.getElementById('calcToggleBtn');
+  const open  = panel.style.display === 'none';
+  panel.style.display = open ? 'block' : 'none';
+  btn.textContent = open ? '▼ Hide Calculation' : '▶ Show Calculation';
+}
+
+// Init diagram on load
+window.onload = drawDiagram;
+
+// Register service worker for PWA offline support
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('./sw.js')
+      .then(() => console.log('SW registered'))
+      .catch(e => console.log('SW error:', e));
+  });
+}
+</script>
+</body>
+</html>
